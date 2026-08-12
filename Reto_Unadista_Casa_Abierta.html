@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Casa Abierta UNAD — Reto Unadista</title>
+<style>
+  :root{
+    --navy:#0B1E45; --navy2:#132A5E; --navy3:#1B3A73;
+    --gold:#D4AF37; --ice:#CFE0F5; --white:#FFFFFF;
+    --green:#3FA66A; --red:#C0392B; --blue:#3E6BB0;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh; background:var(--navy);
+    font-family:Calibri,'Segoe UI',Arial,sans-serif; color:var(--white);
+    display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .ring{position:fixed; border-radius:50%; border:10px solid var(--gold); opacity:.9;}
+  .ring1{width:420px;height:420px; left:-220px; top:-180px;}
+  .ring2{width:340px;height:340px; right:-160px; bottom:-140px; border-color:var(--navy3); border-width:6px;}
+  .app{
+    position:relative; z-index:2; width:100%; max-width:760px;
+    background:var(--navy2); border-radius:18px; padding:34px 38px;
+    box-shadow:0 20px 60px rgba(0,0,0,.4);
+  }
+  h1{font-family:Cambria,Georgia,serif; font-size:30px; margin:0 0 6px;}
+  .sub{color:var(--ice); font-style:italic; margin-bottom:22px; font-size:16px;}
+  .bar-bg{background:var(--navy3); border-radius:10px; height:14px; overflow:hidden; margin-bottom:10px;}
+  .bar-fill{background:var(--gold); height:100%; width:0%; transition:width .4s;}
+  .meta{display:flex; justify-content:space-between; font-size:14px; color:var(--ice); margin-bottom:22px; align-items:center;}
+  .score-chip{background:var(--navy3); border-radius:20px; padding:4px 14px; font-weight:bold; color:var(--gold);}
+  .streak-chip{background:var(--navy3); border-radius:20px; padding:4px 14px; font-weight:bold; color:#FF9F43; margin-left:8px;}
+  .timer-wrap{background:var(--navy3); border-radius:10px; height:8px; overflow:hidden; margin-bottom:22px;}
+  .timer-fill{background:var(--gold); height:100%; width:100%; transition:width 1s linear;}
+  .qtype{display:inline-block; background:var(--navy3); color:var(--gold); font-size:12px; font-weight:bold;
+    letter-spacing:1px; padding:4px 12px; border-radius:20px; margin-bottom:14px;}
+  .question{font-size:22px; font-weight:bold; margin-bottom:22px; line-height:1.3;}
+  .options{display:flex; flex-direction:column; gap:12px;}
+  .opt{
+    background:var(--navy3); border:2px solid transparent; color:var(--white);
+    padding:16px 18px; border-radius:12px; font-size:17px; text-align:left;
+    cursor:pointer; transition:all .15s;
+  }
+  .opt:hover:not(.locked){border-color:var(--gold); transform:translateY(-2px);}
+  .opt.correct{background:var(--green); }
+  .opt.incorrect{background:var(--red); }
+  .tf-row{display:flex; gap:16px;}
+  .tf-row .opt{flex:1; text-align:center; font-size:19px; font-weight:bold;}
+  .match-wrap{display:flex; gap:24px;}
+  .match-col{flex:1; display:flex; flex-direction:column; gap:10px;}
+  .match-item{
+    background:var(--navy3); padding:14px; border-radius:10px; cursor:pointer; font-size:15.5px;
+    border:2px solid transparent; text-align:center;
+  }
+  .match-item.selected{border-color:var(--gold);}
+  .match-item.matched{background:var(--green); cursor:default;}
+  .match-item.wrong-flash{background:var(--red);}
+  .feedback{margin-top:18px; font-size:15px; color:var(--ice); min-height:22px; font-style:italic;}
+  .next-btn, .primary-btn, .ghost-btn{
+    margin-top:20px; background:var(--gold); color:var(--navy); border:none;
+    padding:14px 28px; border-radius:30px; font-size:16px; font-weight:bold; cursor:pointer;
+    display:none;
+  }
+  .primary-btn{display:inline-block;}
+  .ghost-btn{display:inline-block; background:transparent; border:2px solid var(--gold); color:var(--gold); margin-left:10px;}
+  .next-btn:hover, .primary-btn:hover, .ghost-btn:hover{filter:brightness(1.08);}
+  .end-screen{text-align:center;}
+  .end-emoji{font-size:60px; margin-bottom:6px;}
+  .end-score{font-family:Cambria,Georgia,serif; font-size:44px; color:var(--gold); font-weight:bold; margin:6px 0;}
+  .end-msg{font-size:18px; margin-bottom:20px; color:var(--ice);}
+  .footer-note{margin-top:26px; font-size:11px; color:#6E86B8; text-align:center;}
+  .start-screen{text-align:center;}
+  .badge{display:inline-block; background:var(--navy3); color:var(--gold); font-weight:bold; font-size:13px;
+    padding:6px 16px; border-radius:20px; margin-bottom:18px; letter-spacing:1px;}
+  .field{margin:14px 0; text-align:left;}
+  .field label{display:block; font-size:14px; color:var(--ice); margin-bottom:6px; font-weight:bold;}
+  .field input{
+    width:100%; padding:14px 16px; border-radius:12px; border:2px solid var(--navy3);
+    background:var(--navy); color:var(--white); font-size:16px; font-family:inherit;
+  }
+  .field input:focus{outline:none; border-color:var(--gold);}
+  .prize-box{background:var(--navy3); border-radius:14px; padding:16px 18px; margin:18px 0; text-align:left;}
+  .prize-box h3{margin:0 0 10px; color:var(--gold); font-size:16px;}
+  .prize-row{display:flex; align-items:center; gap:10px; padding:6px 0; font-size:15px;}
+  .prize-medal{font-size:22px;}
+  /* Ranking / podio */
+  .podium{display:flex; justify-content:center; align-items:flex-end; gap:14px; margin:10px 0 22px;}
+  .podium-col{display:flex; flex-direction:column; align-items:center; width:33%;}
+  .podium-name{font-size:14px; font-weight:bold; margin-bottom:6px; text-align:center; word-break:break-word;}
+  .podium-bar{width:100%; border-radius:10px 10px 0 0; display:flex; align-items:flex-start; justify-content:center;
+    padding-top:8px; font-size:26px; color:var(--navy); font-weight:bold;}
+  .podium-1 .podium-bar{background:var(--gold); height:120px;}
+  .podium-2 .podium-bar{background:#C0C7D1; height:92px;}
+  .podium-3 .podium-bar{background:#CD7F32; height:70px;}
+  .podium-score{font-size:13px; color:var(--ice); margin-top:4px;}
+  .rank-table{width:100%; border-collapse:collapse; margin-top:8px; font-size:15px;}
+  .rank-table th{color:var(--gold); text-align:left; padding:8px 10px; border-bottom:2px solid var(--navy3); font-size:13px; letter-spacing:1px;}
+  .rank-table td{padding:9px 10px; border-bottom:1px solid var(--navy3);}
+  .rank-table tr.me td{background:var(--navy3); font-weight:bold;}
+  .rank-pos{color:var(--gold); font-weight:bold; width:38px;}
+  .empty-rank{color:#6E86B8; font-style:italic; padding:14px 0; text-align:center;}
+  .btn-row{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-top:10px;}
+  .link-btn{background:none;border:none;color:#6E86B8;font-size:12px;cursor:pointer;text-decoration:underline;margin-top:14px;}
+</style>
+</head>
+<body>
+<div class="ring ring1"></div>
+<div class="ring ring2"></div>
+
+<div class="app" id="app"></div>
+
+<script>
+/* ============================================================
+   RETO UNADISTA — Casa Abierta UDR Valle del Guamuez
+   Banco ampliado + ranking en vivo + premios
+   ============================================================ */
+
+const BANK = [
+  /* ---------- OPCIÓN MÚLTIPLE ---------- */
+  {type:"mc", q:"¿Cuántos años de acreditación en Alta Calidad renovó la UNAD en 2026?", opts:["2 años","4 años","6 años","10 años"], answer:2},
+  {type:"mc", q:"¿Qué escuela forma en Derecho y Ciencia Política?", opts:["ECJP","ECACEN","ECEDU","ECISA"], answer:0},
+  {type:"mc", q:"¿Qué significa CIPAS?", opts:["Círculos de Interacción y Participación Académica y Social","Centro de Investigación y Práctica Académica Solidaria","Comité de Integración Profesional y Servicio Social","Consejo de Innovación y Proyección Académica"], answer:0},
+  {type:"mc", q:"¿A qué escuela pertenece el semillero GUAMPI?", opts:["ECSAH","ECEDU","ECACEN","ECAPMA"], answer:1},
+  {type:"mc", q:"¿Cuál de estas NO es una de las 3 secciones de Casa Abierta?", opts:["Vida Académica","Vida Universitaria","Plataforma Virtual","Vida Financiera"], answer:3},
+  {type:"mc", q:"¿Qué escuela forma en Agronomía, Zootecnia e Ingeniería Ambiental?", opts:["ECAPMA","ECBTI","ECISA","ECSAH"], answer:0},
+  {type:"mc", q:"¿Cómo se llama el servicio de acompañamiento psicológico en línea del Bienestar Integral?", opts:["Telepsicología","Nodos Virtuales","CIPAS","SISSU"], answer:0},
+  {type:"mc", q:"¿Aproximadamente cuántos estudiantes tiene la UNAD en todo el país?", opts:["36.000","+360.000","3.600","36"], answer:1},
+  {type:"mc", q:"¿Qué escuela ofrece Ingeniería de Sistemas e Ingeniería de Telecomunicaciones?", opts:["ECBTI","ECACEN","ECJP","ECEDU"], answer:0},
+  {type:"mc", q:"¿Qué sistema conecta tu carrera con proyectos reales de tu comunidad desde el primer semestre?", opts:["SISSU","VIACI","Campus Virtual","App UNAD"], answer:0},
+  {type:"mc", q:"¿Qué herramienta organiza todo tu semestre en un solo lugar?", opts:["App UNAD","Campus Virtual","Nodos Virtuales","SIGII"], answer:1},
+  {type:"mc", q:"La UDR Valle del Guamuez pertenece a:", opts:["Zona Centro","Zona Sur","Zona Caribe","Zona Occidente"], answer:1},
+  {type:"mc", q:"¿Qué significa la sigla UNAD?", opts:["Universidad Nacional Abierta y a Distancia","Unión Nacional de Aprendizaje a Distancia","Universidad de Nariño y del Distrito","Universidad Nueva Autónoma Digital"], answer:0},
+  {type:"mc", q:"El modelo educativo de la UNAD se basa principalmente en:", opts:["Clases presenciales diarias","Educación abierta y a distancia con apoyo virtual","Estudio solo por correspondencia","Videollamadas obligatorias 8 horas al día"], answer:1},
+  {type:"mc", q:"¿Cuál es la escuela de Ciencias de la Educación?", opts:["ECEDU","ECSAH","ECBTI","ECJP"], answer:0},
+  {type:"mc", q:"El programa nuevo de Trabajo Social pertenece a la escuela:", opts:["ECSAH","ECISA","ECACEN","ECAPMA"], answer:0},
+  {type:"mc", q:"¿Qué necesitas principalmente para estudiar en la UNAD?", opts:["Vivir en una gran ciudad","Conexión a internet y compromiso","Asistir todos los días a un aula","Un promedio perfecto"], answer:1},
+  {type:"mc", q:"¿Qué escuela forma en Administración de Empresas y Contaduría?", opts:["ECACEN","ECBTI","ECEDU","ECISA"], answer:0},
+  {type:"mc", q:"El acompañamiento del docente en la UNAD se llama:", opts:["e-mediador / tutor","Rector","Interventor","Secretario académico"], answer:0},
+  {type:"mc", q:"¿Cuál de estos es un beneficio de estudiar de forma virtual?", opts:["Estudiar desde tu propio territorio","Pagar más matrícula","Perder tu trabajo","Mudarte de ciudad obligatoriamente"], answer:0},
+  {type:"mc", q:"La Cátedra Región busca que aprendas a partir de:", opts:["La realidad de tu territorio","Solo libros extranjeros","Exámenes memorísticos","Clases magistrales de 5 horas"], answer:0},
+  {type:"mc", q:"¿Qué escuela ofrece programas de Salud como Regencia de Farmacia?", opts:["ECISA","ECSAH","ECJP","ECACEN"], answer:0},
+  {type:"mc", q:"En la inducción, ¿qué debes generar para poder ingresar al campus virtual?", opts:["Usuario y contraseña","Un carné físico","Una cédula nueva","Un correo de pago"], answer:0},
+  {type:"mc", q:"¿Cómo se llama la prueba que identifica tus fortalezas y necesidades al ingresar a la UNAD?", opts:["Prueba de caracterización","Examen de admisión","Prueba Saber Pro","Test de coeficiente"], answer:0},
+  {type:"mc", q:"¿Cuál es el nombre del curso inicial que hace todo estudiante nuevo?", opts:["Acogida e Inducción Unadista","Cátedra de Física","Trabajo de grado","Servicio militar"], answer:0},
+  {type:"mc", q:"El portal de inducción de la Zona Sur (unad.online) sirve principalmente para:", opts:["Orientar a los estudiantes nuevos en sus primeros pasos","Comprar libros","Pagar servicios públicos","Ver películas"], answer:0},
+  {type:"mc", q:"¿Qué herramienta te permite calcular el valor de tu matrícula antes de matricularte?", opts:["Simulador de Matrícula","Campus Virtual","Telepsicología","Cátedra Región"], answer:0},
+  {type:"mc", q:"Si tienes dudas sobre tu proceso, ¿a qué sistema institucional puedes acudir?", opts:["SAU (Sistema de Atención al Usuario)","ICBF","Registraduría","DIAN"], answer:0},
+  {type:"mc", q:"El Curso de Orientación Vocacional de la UNAD te ayuda a:", opts:["Elegir el programa que mejor se ajusta a ti","Aprobar automáticamente","Pagar menos matrícula","Graduarte más rápido sin estudiar"], answer:0},
+
+  /* ---------- VERDADERO / FALSO ---------- */
+  {type:"tf", q:"La UNAD es la primera universidad 100% virtual acreditada en Alta Calidad en Colombia.", answer:true},
+  {type:"tf", q:"Para estudiar en la UNAD debes desplazarte todos los días a un salón de clases.", answer:false},
+  {type:"tf", q:"El Bienestar Integral Unadista solo se enfoca en las notas académicas.", answer:false},
+  {type:"tf", q:"La Cátedra Región es parte del Servicio Social Unadista (SISSU).", answer:true},
+  {type:"tf", q:"ECSAH es la escuela de Ciencias Sociales, Artes y Humanidades.", answer:true},
+  {type:"tf", q:"La UNAD solo tiene presencia en las grandes ciudades de Colombia.", answer:false},
+  {type:"tf", q:"Los CIPAS pueden ser liderados tanto por docentes como por estudiantes.", answer:true},
+  {type:"tf", q:"En la UNAD no existe ningún tipo de acompañamiento docente.", answer:false},
+  {type:"tf", q:"En la UNAD puedes estudiar desde el Valle del Guamuez sin mudarte a otra ciudad.", answer:true},
+  {type:"tf", q:"El Campus Virtual está disponible las 24 horas del día.", answer:true},
+  {type:"tf", q:"La UNAD ofrece programas de pregrado y también de posgrado.", answer:true},
+  {type:"tf", q:"El programa de Trabajo Social es 100% virtual.", answer:true},
+  {type:"tf", q:"Solo los jóvenes recién graduados del colegio pueden estudiar en la UNAD.", answer:false},
+  {type:"tf", q:"La telepsicología es un apoyo de salud mental que se ofrece en línea.", answer:true},
+  {type:"tf", q:"Todo estudiante nuevo debe generar su usuario y contraseña para entrar al campus virtual.", answer:true},
+  {type:"tf", q:"La prueba de caracterización sirve para brindarte un mejor acompañamiento según tus necesidades.", answer:true},
+  {type:"tf", q:"Participar en las jornadas de inducción es una pérdida de tiempo y no aporta nada.", answer:false},
+  {type:"tf", q:"La Zona Sur cuenta con un portal de inducción en línea para orientar a los nuevos unadistas.", answer:true},
+
+  /* ---------- RELACIONAMIENTO ---------- */
+  {type:"match", q:"Relaciona cada escuela con su campo de formación:",
+    pairs:[["ECSAH","Ciencias Sociales, Artes y Humanidades"],["ECISA","Ciencias de la Salud"],["ECACEN","Negocios y Administración"],["ECAPMA","Ciencias Agrícolas y Ambiente"]]},
+  {type:"match", q:"Relaciona cada semillero con su escuela:",
+    pairs:[["Transformando Territorio","ECSAH"],["GUAMPI","ECEDU"],["Gestión Empresarial Sostenible","ECACEN"]]},
+  {type:"match", q:"Relaciona cada línea de Bienestar con su función:",
+    pairs:[["Telepsicología","Salud mental en línea"],["Nodos Virtuales","Contenidos siempre disponibles"],["Deporte y cultura","Actividad física y arte"]]},
+  {type:"match", q:"Relaciona cada herramienta virtual con su uso:",
+    pairs:[["Campus Virtual","Organiza todo tu semestre"],["App UNAD","Estudia desde tu celular"],["Encuentros en vivo","Tutorías por videollamada"]]},
+  {type:"match", q:"Relaciona cada elemento del SISSU con su definición:",
+    pairs:[["Cátedra Social Solidaria","Formación en valores desde el 1er semestre"],["Cátedra Región","Aprender con la realidad de tu territorio"],["Práctica con impacto","Práctica profesional real"]]},
+  {type:"match", q:"Relaciona cada sigla con su significado:",
+    pairs:[["UNAD","Universidad Nacional Abierta y a Distancia"],["CIPAS","Círculos de estudio en grupo"],["SISSU","Servicio Social Unadista"]]},
+  {type:"match", q:"Relaciona cada escuela con un programa que ofrece:",
+    pairs:[["ECBTI","Ingeniería de Sistemas"],["ECJP","Derecho"],["ECISA","Regencia de Farmacia"],["ECEDU","Licenciaturas"]]},
+  {type:"match", q:"Relaciona cada paso de la inducción con su propósito:",
+    pairs:[["Jornadas de inducción","Conocer servicios y plataformas"],["Usuario y contraseña","Ingresar al campus virtual"],["Prueba de caracterización","Identificar fortalezas y apoyos"]]},
+  {type:"match", q:"Relaciona cada herramienta de apoyo con su función:",
+    pairs:[["Simulador de Matrícula","Calcular el valor a pagar"],["Orientación Vocacional","Elegir tu programa ideal"],["SAU","Resolver dudas y solicitudes"]]},
+];
+
+/* --------- Configuración de premios (edítalos según tu evento) --------- */
+const PRIZES = [
+  {medal:"🥇", text:"1.º lugar — Kit UNAD + reconocimiento"},
+  {medal:"🥈", text:"2.º lugar — Souvenir UNAD"},
+  {medal:"🥉", text:"3.º lugar — Detalle sorpresa"},
+];
+
+const TIME_PER_Q = 20;
+const RANK_KEY = "reto_unadista_ranking";
+
+let session = [];
+let idx = 0;
+let score = 0;
+let streak = 0;
+let timerInterval = null;
+let player = { nombre: "", colegio: "" };
+
+/* ---------------- utilidades ---------------- */
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+function loadRanking(){
+  try{ return JSON.parse(localStorage.getItem(RANK_KEY)) || []; }
+  catch(e){ return []; }
+}
+function saveScore(entry){
+  const r = loadRanking();
+  r.push(entry);
+  r.sort((a,b)=> b.score - a.score || a.time - b.time);
+  try{ localStorage.setItem(RANK_KEY, JSON.stringify(r.slice(0,100))); }catch(e){}
+  return r;
+}
+
+/* ---------------- pantallas ---------------- */
+function renderStart(){
+  const app = document.getElementById("app");
+  const rankCount = loadRanking().length;
+  app.innerHTML = `
+    <div class="start-screen">
+      <div class="badge">CASA ABIERTA · UDR VALLE DEL GUAMUEZ</div>
+      <h1>🎓 Reto Unadista</h1>
+      <p class="sub">Pon a prueba lo que aprendiste hoy sobre la UNAD. 10 preguntas al azar de un banco de ${BANK.length}. ¡Compite por el podio!</p>
+
+      <div class="prize-box">
+        <h3>🏆 Premios para los mejores puntajes</h3>
+        ${PRIZES.map(p=>`<div class="prize-row"><span class="prize-medal">${p.medal}</span><span>${p.text}</span></div>`).join("")}
+      </div>
+
+      <div class="field">
+        <label>Nombre y apellido <span style="color:#6E86B8;font-weight:normal;">(para competir por los premios)</span></label>
+        <input id="inpNombre" placeholder="Ej: María Fernanda López" maxlength="40" />
+      </div>
+      <div class="field">
+        <label>Colegio (opcional)</label>
+        <input id="inpColegio" placeholder="Ej: I.E. La Hormiga" maxlength="40" />
+      </div>
+
+      <button class="primary-btn" onclick="beginFromStart()">Comenzar reto</button>
+      <button class="ghost-btn" onclick="beginAsGuest()">Entrar como invitado</button>
+      ${rankCount ? `<button class="ghost-btn" onclick="renderRanking()" style="margin-top:12px;">Ver tabla de posiciones</button>` : ``}
+      <div class="footer-note">UDR Valle del Guamuez · Zona Sur UNAD</div>
+    </div>`;
+  const inp = document.getElementById("inpNombre");
+  if(inp) inp.focus();
+}
+
+function beginFromStart(){
+  const nombre = (document.getElementById("inpNombre").value || "").trim();
+  const colegio = (document.getElementById("inpColegio").value || "").trim();
+  if(!nombre){
+    document.getElementById("inpNombre").style.borderColor = "#C0392B";
+    document.getElementById("inpNombre").focus();
+    return;
+  }
+  player = { nombre, colegio };
+  startGame();
+}
+
+function beginAsGuest(){
+  // Numera los invitados para distinguirlos en la tabla (Invitado 1, Invitado 2, ...)
+  const previos = loadRanking().filter(e => /^Invitado\b/i.test(e.nombre)).length;
+  player = { nombre: "Invitado " + (previos + 1), colegio: "" };
+  startGame();
+}
+
+let gameStartTime = 0;
+function startGame(){
+  session = shuffle(BANK).slice(0,10);
+  idx = 0; score = 0; streak = 0;
+  gameStartTime = Date.now();
+  renderQuestion();
+}
+
+function stopTimer(){ if(timerInterval){ clearInterval(timerInterval); timerInterval=null; } }
+
+function startTimer(onTimeout){
+  let t = TIME_PER_Q;
+  const fill = document.getElementById("timerFill");
+  if(fill) fill.style.width = "100%";
+  stopTimer();
+  timerInterval = setInterval(()=>{
+    t -= 1;
+    if(fill) fill.style.width = (t/TIME_PER_Q*100)+"%";
+    if(t<=0){ stopTimer(); onTimeout(); }
+  },1000);
+}
+
+function renderQuestion(){
+  const app = document.getElementById("app");
+  const q = session[idx];
+  const progressPct = (idx/session.length)*100;
+
+  app.innerHTML = `
+    <div class="meta">
+      <span>Pregunta ${idx+1} de ${session.length}</span>
+      <span>
+        <span class="score-chip">⭐ ${score} pts</span>
+        ${streak>=2?`<span class="streak-chip">🔥 ${streak} seguidas</span>`:``}
+      </span>
+    </div>
+    <div class="bar-bg"><div class="bar-fill" style="width:${progressPct}%"></div></div>
+    <div class="timer-wrap"><div class="timer-fill" id="timerFill"></div></div>
+    <div class="qtype">${q.type==='mc'?'OPCIÓN MÚLTIPLE':q.type==='tf'?'VERDADERO O FALSO':'RELACIONA'}</div>
+    <div class="question">${q.q}</div>
+    <div id="qbody"></div>
+    <div class="feedback" id="feedback"></div>
+    <button class="next-btn" id="nextBtn" onclick="nextQuestion()">Siguiente →</button>
+  `;
+
+  const body = document.getElementById("qbody");
+  if(q.type==="mc"){
+    body.innerHTML = `<div class="options">` + q.opts.map((o,i)=>
+      `<button class="opt" data-i="${i}" onclick="answerMC(${i})">${o}</button>`
+    ).join("") + `</div>`;
+  } else if(q.type==="tf"){
+    body.innerHTML = `<div class="tf-row">
+      <button class="opt" onclick="answerTF(true)">✅ Verdadero</button>
+      <button class="opt" onclick="answerTF(false)">❌ Falso</button>
+    </div>`;
+  } else if(q.type==="match"){
+    renderMatch(body, q);
+  }
+  startTimer(()=>{ handleTimeout(); });
+}
+
+function lockOptions(){
+  document.querySelectorAll(".opt").forEach(b=>{ b.classList.add("locked"); b.onclick=null; });
+}
+function showNext(){ document.getElementById("nextBtn").style.display="inline-block"; }
+
+function handleTimeout(){
+  const q = session[idx];
+  streak = 0;
+  document.getElementById("feedback").textContent = "⏰ ¡Se acabó el tiempo! Sigamos.";
+  if(q.type!=="match") lockOptions();
+  showNext();
+}
+
+function registerCorrect(msg){
+  score++; streak++;
+  const extra = streak>=3 ? " 🔥 ¡Racha encendida!" : "";
+  document.getElementById("feedback").textContent = (msg||"🎉 ¡Correcto!") + extra;
+}
+function registerWrong(msg){
+  streak = 0;
+  document.getElementById("feedback").textContent = msg||"No era esa — ¡sigue así!";
+}
+
+function answerMC(i){
+  stopTimer();
+  const q = session[idx];
+  const buttons = document.querySelectorAll(".opt");
+  buttons.forEach(b=>b.onclick=null);
+  buttons[i].classList.add(i===q.answer?"correct":"incorrect");
+  if(i!==q.answer) buttons[q.answer].classList.add("correct");
+  if(i===q.answer){ registerCorrect(); } else { registerWrong(); }
+  showNext();
+}
+
+function answerTF(val){
+  stopTimer();
+  const q = session[idx];
+  const buttons = document.querySelectorAll(".opt");
+  buttons.forEach(b=>b.onclick=null);
+  const correctIdx = q.answer===true?0:1;
+  const chosenIdx = val===true?0:1;
+  buttons[chosenIdx].classList.add(chosenIdx===correctIdx?"correct":"incorrect");
+  if(chosenIdx!==correctIdx) buttons[correctIdx].classList.add("correct");
+  if(chosenIdx===correctIdx){ registerCorrect(); } else { registerWrong("No era así — ¡vamos con la siguiente!"); }
+  showNext();
+}
+
+function renderMatch(container, q){
+  const lefts = q.pairs.map(p=>p[0]);
+  const rights = shuffle(q.pairs.map(p=>p[1]));
+  let selectedLeft = null;
+  let matchedCount = 0;
+
+  container.innerHTML = `<div class="match-wrap">
+    <div class="match-col" id="leftCol">${lefts.map((l,i)=>`<div class="match-item" data-l="${i}">${l}</div>`).join("")}</div>
+    <div class="match-col" id="rightCol">${rights.map((r,i)=>`<div class="match-item" data-r="${i}">${r}</div>`).join("")}</div>
+  </div>`;
+
+  const leftEls = container.querySelectorAll("[data-l]");
+  const rightEls = container.querySelectorAll("[data-r]");
+
+  leftEls.forEach(el=>{
+    el.addEventListener("click", ()=>{
+      if(el.classList.contains("matched")) return;
+      leftEls.forEach(e=>e.classList.remove("selected"));
+      el.classList.add("selected");
+      selectedLeft = el;
+    });
+  });
+
+  rightEls.forEach(el=>{
+    el.addEventListener("click", ()=>{
+      if(el.classList.contains("matched") || !selectedLeft) return;
+      const leftText = selectedLeft.textContent;
+      const rightText = el.textContent;
+      const correctPair = q.pairs.some(p=>p[0]===leftText && p[1]===rightText);
+      if(correctPair){
+        selectedLeft.classList.add("matched"); selectedLeft.classList.remove("selected");
+        el.classList.add("matched");
+        matchedCount++;
+        selectedLeft = null;
+        if(matchedCount===q.pairs.length){
+          stopTimer();
+          registerCorrect("🎉 ¡Relación perfecta!");
+          showNext();
+        }
+      } else {
+        el.classList.add("wrong-flash");
+        setTimeout(()=>el.classList.remove("wrong-flash"),400);
+      }
+    });
+  });
+}
+
+function nextQuestion(){
+  idx++;
+  if(idx>=session.length){ renderEnd(); }
+  else{ renderQuestion(); }
+}
+
+function renderEnd(){
+  stopTimer();
+  const elapsed = Math.round((Date.now()-gameStartTime)/1000);
+  const ranking = saveScore({ nombre: player.nombre, colegio: player.colegio, score, time: elapsed, ts: Date.now() });
+
+  // posición del jugador actual en la tabla ordenada
+  const pos = ranking.findIndex(e=>e.nombre===player.nombre && e.score===score && e.time===elapsed) + 1;
+
+  const app = document.getElementById("app");
+  const pct = Math.round((score/session.length)*100);
+  let emoji="🌱", msg="¡Buen comienzo! Repasa lo de hoy y vuelve a intentarlo.";
+  if(pct>=80){ emoji="🏆"; msg="¡Excelente! Ya conoces muy bien la UNAD y la Casa Abierta."; }
+  else if(pct>=50){ emoji="🎯"; msg="¡Vas muy bien! Un repaso más y lo tienes todo."; }
+
+  let posMsg = "";
+  if(pos>=1){
+    if(pos===1) posMsg = "🥇 ¡Vas de primero en la tabla!";
+    else if(pos===2) posMsg = "🥈 ¡Estás de segundo!";
+    else if(pos===3) posMsg = "🥉 ¡Estás de tercero!";
+    else posMsg = `Estás en la posición #${pos} de ${ranking.length}.`;
+  }
+
+  app.innerHTML = `
+    <div class="end-screen">
+      <div class="end-emoji">${emoji}</div>
+      <div class="end-score">${score} / ${session.length}</div>
+      <div class="end-msg">${msg}</div>
+      <div class="score-chip" style="display:inline-block;margin-bottom:16px;">${posMsg}</div>
+      <div class="btn-row">
+        <button class="primary-btn" onclick="renderRanking()">Ver tabla de posiciones</button>
+        <button class="ghost-btn" onclick="renderStart()">Otro participante</button>
+      </div>
+      <div class="footer-note">Casa Abierta · UDR Valle del Guamuez · Banco de ${BANK.length} preguntas</div>
+    </div>`;
+}
+
+function renderRanking(){
+  const app = document.getElementById("app");
+  const ranking = loadRanking();
+  const top3 = ranking.slice(0,3);
+
+  let podium = "";
+  if(top3.length){
+    const order = [1,0,2]; // 2º, 1º, 3º visual
+    podium = `<div class="podium">` + order.map(o=>{
+      const e = top3[o];
+      if(!e) return `<div class="podium-col"></div>`;
+      const cls = o===0?"podium-1":o===1?"podium-2":"podium-3";
+      const medal = o===0?"🥇":o===1?"🥈":"🥉";
+      return `<div class="podium-col ${cls}">
+        <div class="podium-name">${escapeHtml(e.nombre)}</div>
+        <div class="podium-bar">${medal}</div>
+        <div class="podium-score">${e.score} pts</div>
+      </div>`;
+    }).join("") + `</div>`;
+  }
+
+  let rows = "";
+  if(ranking.length){
+    rows = ranking.slice(0,15).map((e,i)=>`
+      <tr>
+        <td class="rank-pos">${i+1}</td>
+        <td>${escapeHtml(e.nombre)}${e.colegio?`<br><span style="font-size:12px;color:#6E86B8;">${escapeHtml(e.colegio)}</span>`:``}</td>
+        <td>${e.score}</td>
+        <td>${e.time}s</td>
+      </tr>`).join("");
+  } else {
+    rows = `<tr><td colspan="4" class="empty-rank">Aún no hay puntajes. ¡Sé el primero!</td></tr>`;
+  }
+
+  app.innerHTML = `
+    <div class="badge">🏆 TABLA DE POSICIONES</div>
+    <h1 style="font-size:26px;">Reto Unadista</h1>
+    <p class="sub">Los mejores puntajes de hoy en Casa Abierta</p>
+    ${podium}
+    <table class="rank-table">
+      <thead><tr><th>#</th><th>Participante</th><th>Puntos</th><th>Tiempo</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="prize-box" style="margin-top:20px;">
+      <h3>🎁 Premios</h3>
+      ${PRIZES.map(p=>`<div class="prize-row"><span class="prize-medal">${p.medal}</span><span>${p.text}</span></div>`).join("")}
+    </div>
+    <div class="btn-row">
+      <button class="primary-btn" onclick="renderStart()">Nuevo participante</button>
+    </div>
+    <button class="link-btn" onclick="confirmReset()">Reiniciar tabla (nuevo evento)</button>
+    <div class="footer-note">UDR Valle del Guamuez · Zona Sur UNAD</div>
+  `;
+}
+
+function confirmReset(){
+  if(confirm("¿Borrar toda la tabla de posiciones? Úsalo solo al empezar un evento nuevo. Esta acción no se puede deshacer.")){
+    localStorage.removeItem(RANK_KEY);
+    renderRanking();
+  }
+}
+
+function escapeHtml(s){
+  return String(s||"").replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+}
+
+renderStart();
+</script>
+</body>
+</html>
